@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>モバイルマルチメディア通信研究室 - 芝浦工業大学</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css">
+    <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-green: #1a7f37;
+            --secondary-green: #2d9748;
+            --light-green: #4caf50;
+            --accent-green: #66bb6a;
+            --dark-green: #0d5a23;
+            --background-green: #f1f8e9;
+            --text-dark: #1b3422;
+            --text-gray: #4a5c4f;
+            --white: #ffffff;
+            --light-gray: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--background-green) 0%, #e8f5e8 50%, #dcedc8 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(26, 127, 55, 0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .university-logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 20px rgba(26, 127, 55, 0.3);
+        }
+
+        .header-text h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .header-text p {
+            font-size: 0.9rem;
+            color: var(--text-gray);
+            font-weight: 400;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .hero-section {
+            padding: 4rem 0;
+            text-align: center;
+        }
+
+        .hero-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 4rem 3rem;
+            box-shadow: 
+                0 32px 64px -12px rgba(26, 127, 55, 0.15),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary-green), var(--light-green), var(--accent-green), var(--secondary-green));
+            background-size: 400% 100%;
+            animation: gradient-flow 4s ease infinite;
+        }
+
+        @keyframes gradient-flow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .research-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 2rem;
+            letter-spacing: 0.5px;
+            box-shadow: 0 8px 20px rgba(26, 127, 55, 0.3);
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle-en {
+            font-size: 1.5rem;
+            color: var(--text-gray);
+            margin-bottom: 1.5rem;
+            font-weight: 400;
+            font-style: italic;
+        }
+
+        .hero-slogan {
+            font-size: 1.25rem;
+            color: var(--primary-green);
+            margin-bottom: 3rem;
+            font-weight: 500;
+            background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .professor-info {
+            background: linear-gradient(135deg, var(--light-gray) 0%, #ffffff 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 3rem 0;
+            border: 2px solid rgba(26, 127, 55, 0.1);
+        }
+
+        .professor-info h3 {
+            font-size: 1.25rem;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .professor-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .detail-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .detail-text {
+            color: var(--text-gray);
+            font-size: 0.95rem;
+        }
+
+        .sections {
+            display: grid;
+            gap: 3rem;
+            margin: 4rem 0;
+        }
+
+        .section-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(26, 127, 55, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .section-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 32px 64px rgba(26, 127, 55, 0.12);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: white;
+            box-shadow: 0 8px 20px rgba(26, 127, 55, 0.3);
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .research-themes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .theme-item {
+            background: linear-gradient(135deg, var(--background-green) 0%, #ffffff 100%);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 2px solid rgba(26, 127, 55, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .theme-item:hover {
+            border-color: var(--accent-green);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(26, 127, 55, 0.1);
+        }
+
+        .theme-item h4 {
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .theme-item p {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .keywords-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .keyword-tag {
+            background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: transform 0.2s ease;
+        }
+
+        .keyword-tag:hover {
+            transform: scale(1.05);
+        }
+
+        .chat-prompt {
+            background: linear-gradient(135deg, var(--background-green) 0%, #ffffff 100%);
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+            margin: 3rem 0;
+            border: 2px solid rgba(26, 127, 55, 0.1);
+        }
+
+        .chat-prompt h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .chat-prompt p {
+            color: var(--text-gray);
+            font-size: 1rem;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Floating elements */
+        .floating-element {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0.08;
+        }
+
+        .floating-1 {
+            top: 15%;
+            left: 8%;
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, var(--primary-green), var(--accent-green));
+            border-radius: 50%;
+            animation: float-gentle 8s ease-in-out infinite;
+        }
+
+        .floating-2 {
+            top: 50%;
+            right: 10%;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--secondary-green), var(--light-green));
+            border-radius: 20px;
+            animation: float-gentle 10s ease-in-out infinite reverse;
+        }
+
+        .floating-3 {
+            bottom: 20%;
+            left: 15%;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--accent-green), var(--primary-green));
+            border-radius: 15px;
+            animation: float-gentle 12s ease-in-out infinite;
+        }
+
+        @keyframes float-gentle {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(8deg); }
+        }
+
+        /* Dialogflow Messenger Styling */
+        df-messenger {
+            z-index: 999;
+            position: fixed;
+            --df-messenger-font-color: var(--text-dark);
+            --df-messenger-font-family: 'Noto Sans JP', 'Inter', sans-serif;
+            --df-messenger-chat-background: #ffffff;
+            --df-messenger-message-user-background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+            --df-messenger-message-bot-background: var(--background-green);
+            --df-messenger-primary-color: var(--primary-green);
+            --df-messenger-titlebar-background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+            --df-messenger-titlebar-font-color: #ffffff;
+            --df-messenger-chat-border-radius: 20px;
+            bottom: 24px;
+            right: 24px;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(26, 127, 55, 0.25);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .header-content {
+                padding: 0 1rem;
+            }
+
+            .hero-content {
+                padding: 2.5rem 1.5rem;
+                border-radius: 20px;
+            }
+
+            .hero-title {
+                font-size: 2.25rem;
+            }
+
+            .hero-subtitle-en {
+                font-size: 1.25rem;
+            }
+
+            .section-card {
+                padding: 2rem;
+                border-radius: 16px;
+            }
+
+            .research-themes {
+                grid-template-columns: 1fr;
+            }
+
+            .professor-details {
+                grid-template-columns: 1fr;
+            }
+
+            df-messenger {
+                bottom: 16px;
+                right: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-element floating-1"></div>
+    <div class="floating-element floating-2"></div>
+    <div class="floating-element floating-3"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="university-logo">SIT</div>
+                <div class="header-text">
+                    <h1>芝浦工業大学</h1>
+                    <p>Shibaura Institute of Technology</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <section class="hero-section">
+            <div class="hero-content">
+                <div class="research-badge">Mobile Multimedia Communications Laboratory</div>
+                
+                <h1 class="hero-title">モバイルマルチメディア通信研究室</h1>
+                <p class="hero-subtitle-en">Mobile Multimedia Communications Laboratory</p>
+                <p class="hero-slogan">人にやさしい情報通信環境をめざして</p>
+
+                <div class="professor-info">
+                    <h3>研究室概要</h3>
+                    <div class="professor-details">
+                        <div class="detail-item">
+                            <div class="detail-icon">👨‍🏫</div>
+                            <div class="detail-text">
+                                <strong>担当教員</strong><br>
+                                上岡 英史 教授
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-icon">🏢</div>
+                            <div class="detail-text">
+                                <strong>研究室所在地</strong><br>
+                                豊洲キャンパス本部棟 11F 11F07
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-icon">🎓</div>
+                            <div class="detail-text">
+                                <strong>所属</strong><br>
+                                工学部 情報・通信工学課程 情報通信コース
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-icon">🌱</div>
+                            <div class="detail-text">
+                                <strong>SDGs貢献</strong><br>
+                                産業と技術革新の基盤をつくろう
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="sections">
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-icon">🔬</div>
+                    <h2 class="section-title">研究理念</h2>
+                </div>
+                <p>モバイルマルチメディア通信研究室には、"ひとにやさしい情報通信環境を目指して"、というスローガンがあります。ひとにやさしい情報通信環境とは、ひとがコンピュータを意識することなく情報通信サービスを利用できる環境を指します。ひとがコンピュータを意識しないという概念は、ユビキタスコンピューティングの父と呼ばれるマーク・ワイザーによって提唱されました。当研究室では、この概念を人間中心(Human-centric)の知的情報通信システムによって実現できると考え、幅広い観点から研究活動を行っています。</p>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-icon">🎯</div>
+                    <h2 class="section-title">研究テーマ</h2>
+                </div>
+                <div class="research-themes">
+                    <div class="theme-item">
+                        <h4>🤖 人工知能技術を用いた情報通信アプリケーション</h4>
+                        <p>AIを活用した次世代の情報通信システムの開発</p>
+                    </div>
+                    <div class="theme-item">
+                        <h4>📊 生体情報を用いたユーザの特性・感情推定</h4>
+                        <p>生体信号からユーザの状態を理解するシステム</p>
+                    </div>
+                    <div class="theme-item">
+                        <h4>🖱️ ひとにやさしい直感的ユーザ・インタフェース</h4>
+                        <p>誰でも使いやすいインターフェースの設計</p>
+                    </div>
+                    <div class="theme-item">
+                        <h4>💚 感性を利用した快適な知的情報環境</h4>
+                        <p>人の感性に配慮した情報システムの構築</p>
+                    </div>
+                    <div class="theme-item">
+                        <h4>⭐ ユーザ満足度の高い情報通信サービス品質</h4>
+                        <p>利用者の満足度を最大化するサービス設計</p>
+                    </div>
+                    <div class="theme-item">
+                        <h4>🔊 原音の忠実再生を目指した音響環境</h4>
+                        <p>高品質な音響体験の実現技術</p>
+                    </div>
+                    <div class="theme-item">
+                        <h4>🦽 IoT技術を用いた障碍者支援システム</h4>
+                        <p>NaviHatなどのアクセシビリティ向上技術</p>
+                    </div>
+                    <div class="theme-item">
+                        <h4>🎬 視聴覚臨場感を実現するメディア技術</h4>
+                        <p>没入感のあるマルチメディア体験の創造</p>
+                    </div>
+                    <div class="theme-item">
+                        <h4>📱 SNS情報を用いたユーザの感情推定</h4>
+                        <p>ソーシャルメディアからの感情分析技術</p>
+                    </div>
+                    <div class="theme-item">
+                        <h4>📚 ユーザの理解度把握に基づく遠隔授業支援システム</h4>
+                        <p>効果的なオンライン教育のための技術開発</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-icon">🏷️</div>
+                    <h2 class="section-title">研究キーワード</h2>
+                </div>
+                <div class="keywords-grid">
+                    <span class="keyword-tag">マルチメディア</span>
+                    <span class="keyword-tag">ネットワーク</span>
+                    <span class="keyword-tag">ソフトウェア</span>
+                    <span class="keyword-tag">情報ネットワーク</span>
+                    <span class="keyword-tag">知的情報システム</span>
+                    <span class="keyword-tag">ユビキタス</span>
+                    <span class="keyword-tag">人間工学</span>
+                    <span class="keyword-tag">感性工学</span>
+                    <span class="keyword-tag">ユーザ満足度</span>
+                    <span class="keyword-tag">人工知能</span>
+                    <span class="keyword-tag">モバイル</span>
+                    <span class="keyword-tag">UCD（ユーザー中心設計）</span>
+                    <span class="keyword-tag">ヒューマンインターフェース</span>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-icon">🌍</div>
+                    <h2 class="section-title">社会への貢献</h2>
+                </div>
+                <p>次世代知的情報通信システムやマルチメディアシステムの分野で、付加価値のあるサービス実現に向けた技術を研究しています。卒業生は大学院にて、また、大手情報通信関連企業で活躍しています。情報工学、情報科学、情報通信工学、メディア情報工学の幅広い分野での学習が可能です。</p>
+            </div>
+        </div>
+
+        <div class="chat-prompt">
+            <h3>💬 研究室について詳しく知りたい方へ</h3>
+            <p>モバイルマルチメディア通信研究室に関するご質問やお困りごとがございましたら、右下のチャットボタンからお気軽にお尋ねください。研究内容、進学相談、見学申し込みなど、何でもサポートいたします。</p>
+        </div>
+    </div>
+
+    <!-- Dialogflow Messenger -->
+    <df-messenger
+        project-id="shibaura-chatbot"
+        agent-id="67f8e3c2-a8ac-4892-8643-0f604a869019"
+        language-code="ja"
+        max-query-length="-1">
+        <df-messenger-chat-bubble
+            chat-title="研究室相談">
+        </df-messenger-chat-bubble>
+    </df-messenger>
+</body>
+</html>
