@@ -10,6 +10,11 @@
     <link rel="stylesheet" href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css">
     <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
     
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -215,6 +220,84 @@
         .detail-text {
             color: var(--text-gray);
             font-size: 0.95rem;
+        }
+
+        /* 3D Viewer Styles */
+        .viewer-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(26, 127, 55, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin: 3rem 0;
+        }
+
+        .viewer-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .viewer-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .viewer-subtitle {
+            color: var(--text-gray);
+            font-size: 1rem;
+        }
+
+        #threejs-container {
+            width: 100%;
+            height: 500px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f0f8f0 0%, #e8f5e8 100%);
+            border: 2px solid rgba(26, 127, 55, 0.1);
+            position: relative;
+        }
+
+        .viewer-controls {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .control-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(26, 127, 55, 0.1);
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            color: var(--text-gray);
+        }
+
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--text-gray);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(26, 127, 55, 0.1);
+            border-left: 4px solid var(--primary-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .sections {
@@ -426,7 +509,7 @@
                 font-size: 1.25rem;
             }
 
-            .section-card {
+            .section-card, .viewer-section {
                 padding: 2rem;
                 border-radius: 16px;
             }
@@ -437,6 +520,15 @@
 
             .professor-details {
                 grid-template-columns: 1fr;
+            }
+
+            #threejs-container {
+                height: 400px;
+            }
+
+            .control-info {
+                flex-direction: column;
+                gap: 0.5rem;
             }
 
             df-messenger {
@@ -504,6 +596,29 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3D Lab Viewer Section -->
+        <section class="viewer-section">
+            <div class="viewer-header">
+                <h2 class="viewer-title">🏢 研究室バーチャルツアー</h2>
+                <p class="viewer-subtitle">3Dモデルで研究室内部をご覧いただけます</p>
+            </div>
+            
+            <div id="threejs-container">
+                <div class="loading-indicator" id="loading-indicator">
+                    <div class="loading-spinner"></div>
+                    <p>3Dモデルを読み込んでいます...</p>
+                </div>
+            </div>
+            
+            <div class="viewer-controls">
+                <div class="control-info">
+                    <span>🖱️ マウス左ドラッグで回転</span>
+                    <span>🔍 ホイールでズーム</span>
+                    <span>👆 右ドラッグで移動</span>
                 </div>
             </div>
         </section>
@@ -613,5 +728,152 @@
             chat-title="研究室相談">
         </df-messenger-chat-bubble>
     </df-messenger>
+
+    <!-- Three.js Script -->
+    <script>
+        // Three.js variables
+        let scene, camera, renderer, controls;
+        let labModel;
+
+        // Initialize 3D viewer
+        function init3DViewer() {
+            const container = document.getElementById('threejs-container');
+            const loadingIndicator = document.getElementById('loading-indicator');
+
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f8f0);
+
+            // Create camera
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+
+            container.appendChild(renderer.domElement);
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0x4169e1, 0.3);
+            scene.add(hemisphereLight);
+
+            // Add orbit controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.1;
+            controls.enableZoom = true;
+            controls.enablePan = true;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.5;
+
+            // Load GLB model
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                './lab_ver2.glb',
+                function (gltf) {
+                    labModel = gltf.scene;
+                    
+                    // Enable shadows for the model
+                    labModel.traverse(function (child) {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            
+                            // Improve material appearance
+                            if (child.material) {
+                                child.material.envMapIntensity = 0.5;
+                            }
+                        }
+                    });
+
+                    scene.add(labModel);
+
+                    // Calculate model bounds and center it
+                    const box = new THREE.Box3().setFromObject(labModel);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+
+                    // Center the model
+                    labModel.position.sub(center);
+
+                    // Position camera based on model size
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    camera.position.set(maxDim * 0.5, maxDim * 0.5, maxDim * 0.5);
+                    camera.lookAt(0, 0, 0);
+
+                    // Set controls target
+                    controls.target.set(0, 0, 0);
+                    controls.maxDistance = maxDim * 3;
+                    controls.minDistance = maxDim * 0.05;
+                    controls.update();
+
+                    // Hide loading indicator
+                    loadingIndicator.style.display = 'none';
+
+                    // Start animation loop
+                    animate();
+                },
+                function (progress) {
+                    // Loading progress
+                    const percentComplete = (progress.loaded / progress.total) * 100;
+                    console.log('Loading progress: ' + percentComplete + '%');
+                },
+                function (error) {
+                    console.error('An error occurred loading the GLB model:', error);
+                    loadingIndicator.innerHTML = '<div class="loading-spinner"></div><p>モデルの読み込みに失敗しました</p>';
+                }
+            );
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize, false);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('threejs-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            init3DViewer();
+        });
+
+        // Pause auto-rotation when user interacts
+        document.getElementById('threejs-container').addEventListener('mousedown', function() {
+            controls.autoRotate = false;
+        });
+
+        // Resume auto-rotation after inactivity
+        let inactivityTimer;
+        document.getElementById('threejs-container').addEventListener('mouseup', function() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(function() {
+                controls.autoRotate = true;
+            }, 3000); // Resume after 3 seconds of inactivity
+        });
+    </script>
 </body>
 </html>
