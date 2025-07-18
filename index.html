@@ -13,7 +13,6 @@
     <!-- Three.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     
     <style>
@@ -735,59 +734,11 @@
         // Three.js variables
         let scene, camera, renderer, controls;
         let labModel;
-        let isAnimating = false;
-        let frameCount = 0;
-        let fps = 0;
-        let lastTime = 0;
-
-        // Mobile detection
-        function isMobile() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-        }
-
-        // Performance monitoring
-        function updateFPS() {
-            frameCount++;
-            const currentTime = performance.now();
-            if (currentTime - lastTime >= 1000) {
-                fps = frameCount;
-                frameCount = 0;
-                lastTime = currentTime;
-                
-                // Auto-adjust quality based on FPS
-                if (fps < 30 && isMobile()) {
-                    optimizeForMobile();
-                }
-            }
-        }
-
-        // Mobile optimization
-        function optimizeForMobile() {
-            if (renderer) {
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-                renderer.shadowMap.enabled = false;
-                
-                // Reduce shadow quality
-                const lights = scene.children.filter(child => child.isDirectionalLight);
-                lights.forEach(light => {
-                    if (light.shadow) {
-                        light.shadow.mapSize.width = 512;
-                        light.shadow.mapSize.height = 512;
-                    }
-                });
-            }
-            
-            if (controls) {
-                controls.autoRotate = false;
-                controls.enableDamping = false;
-            }
-        }
 
         // Initialize 3D viewer
         function init3DViewer() {
             const container = document.getElementById('threejs-container');
             const loadingIndicator = document.getElementById('loading-indicator');
-            const mobile = isMobile();
 
             // Create scene
             scene = new THREE.Scene();
@@ -796,94 +747,60 @@
             // Create camera
             camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
 
-            // Create renderer with mobile optimizations
-            const rendererOptions = {
-                antialias: !mobile,
-                alpha: true,
-                powerPreference: mobile ? "low-power" : "high-performance",
-                precision: mobile ? "mediump" : "highp"
-            };
-
-            renderer = new THREE.WebGLRenderer(rendererOptions);
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(mobile ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio);
-            
-            // Mobile-specific renderer settings
-            if (mobile) {
-                renderer.shadowMap.enabled = false;
-                renderer.outputEncoding = THREE.LinearEncoding;
-                renderer.toneMapping = THREE.NoToneMapping;
-            } else {
-                renderer.shadowMap.enabled = true;
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-                renderer.outputEncoding = THREE.sRGBEncoding;
-                renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 1.0;
-            }
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
 
             container.appendChild(renderer.domElement);
 
-            // Add lights (simplified for mobile)
-            const ambientLight = new THREE.AmbientLight(0xffffff, mobile ? 0.8 : 0.6);
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
             scene.add(ambientLight);
 
-            if (!mobile) {
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                directionalLight.position.set(10, 10, 5);
-                directionalLight.castShadow = true;
-                directionalLight.shadow.mapSize.width = mobile ? 512 : 2048;
-                directionalLight.shadow.mapSize.height = mobile ? 512 : 2048;
-                scene.add(directionalLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
 
-                const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0x4169e1, 0.3);
-                scene.add(hemisphereLight);
-            }
+            const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0x4169e1, 0.3);
+            scene.add(hemisphereLight);
 
             // Add orbit controls
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = !mobile;
+            controls.enableDamping = true;
             controls.dampingFactor = 0.1;
             controls.enableZoom = true;
             controls.enablePan = true;
-            controls.autoRotate = !mobile;
-            controls.autoRotateSpeed = mobile ? 0.2 : 0.5;
-            controls.maxPolarAngle = Math.PI * 0.8;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.5;
 
-            // Load FBX model
-            const loader = new THREE.FBXLoader();
+            // Load GLB model
+            const loader = new THREE.GLTFLoader();
             loader.load(
-                '/Users/yamazakiakirafutoshi/VScode/shibaura-chat/lab_ver3.fbx',
-                function (fbx) {
-                    labModel = fbx;
+                './lab_ver5.glb',
+                function (gltf) {
+                    labModel = gltf.scene;
                     
-                    // Optimize model for mobile
-                    let triangleCount = 0;
+                    // Enable shadows for the model
                     labModel.traverse(function (child) {
                         if (child.isMesh) {
-                            triangleCount += child.geometry.attributes.position.count / 3;
+                            child.castShadow = true;
+                            child.receiveShadow = true;
                             
-                            // Mobile optimizations
-                            if (mobile) {
-                                child.castShadow = false;
-                                child.receiveShadow = false;
-                                
-                                // Simplify materials
-                                if (child.material) {
-                                    child.material.envMapIntensity = 0.2;
-                                    child.material.needsUpdate = true;
-                                }
-                            } else {
-                                child.castShadow = true;
-                                child.receiveShadow = true;
-                                
-                                if (child.material) {
-                                    child.material.envMapIntensity = 0.5;
-                                }
+                            // Improve material appearance
+                            if (child.material) {
+                                child.material.envMapIntensity = 0.5;
                             }
                         }
                     });
 
-                    console.log(`Model loaded with ${triangleCount} triangles`);
                     scene.add(labModel);
 
                     // Calculate model bounds and center it
@@ -909,24 +826,15 @@
                     loadingIndicator.style.display = 'none';
 
                     // Start animation loop
-                    isAnimating = true;
                     animate();
                 },
                 function (progress) {
                     // Loading progress
                     const percentComplete = (progress.loaded / progress.total) * 100;
                     console.log('Loading progress: ' + percentComplete + '%');
-                    
-                    // Update loading indicator
-                    if (progress.total > 0) {
-                        loadingIndicator.innerHTML = `
-                            <div class="loading-spinner"></div>
-                            <p>3Dモデルを読み込んでいます... ${Math.round(percentComplete)}%</p>
-                        `;
-                    }
                 },
                 function (error) {
-                    console.error('An error occurred loading the FBX model:', error);
+                    console.error('An error occurred loading the GLB model:', error);
                     loadingIndicator.innerHTML = '<div class="loading-spinner"></div><p>モデルの読み込みに失敗しました</p>';
                 }
             );
@@ -943,17 +851,8 @@
         }
 
         function animate() {
-            if (!isAnimating) return;
-            
             requestAnimationFrame(animate);
-            
-            // Update FPS counter
-            updateFPS();
-            
-            // Update controls
             controls.update();
-            
-            // Render
             renderer.render(scene, camera);
         }
 
@@ -964,36 +863,17 @@
 
         // Pause auto-rotation when user interacts
         document.getElementById('threejs-container').addEventListener('mousedown', function() {
-            if (controls) controls.autoRotate = false;
+            controls.autoRotate = false;
         });
 
-        // Resume auto-rotation after inactivity (only on desktop)
+        // Resume auto-rotation after inactivity
         let inactivityTimer;
         document.getElementById('threejs-container').addEventListener('mouseup', function() {
-            if (!isMobile()) {
-                clearTimeout(inactivityTimer);
-                inactivityTimer = setTimeout(function() {
-                    if (controls) controls.autoRotate = true;
-                }, 3000); // Resume after 3 seconds of inactivity
-            }
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(function() {
+                controls.autoRotate = true;
+            }, 3000); // Resume after 3 seconds of inactivity
         });
-
-        // Pause rendering when page is not visible
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                isAnimating = false;
-            } else {
-                isAnimating = true;
-                animate();
-            }
-        });
-
-        // Performance monitoring (show FPS in console for debugging)
-        setInterval(function() {
-            if (fps > 0) {
-                console.log(`FPS: ${fps}, Mobile: ${isMobile()}`);
-            }
-        }, 5000);
     </script>
 </body>
 </html>
